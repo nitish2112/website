@@ -170,33 +170,53 @@ The evaluate method for the execute stage looks something like this:
 void 
 Execute::evaluate()
 {
+    // Set the dToE Latch data as the one to be pushed into input buffer next
+    inputBuffer[inp.outputWire->threadId].setTail(*inp.outputWire);
+
     lsq.step(); // Step the Load-Store Queues
     commit();   // Commit the instruction 
     issue();    // Issue instructions whose dependencies are satisfied 
+
+    // Push the dToE Latch data into the input buffer
+    inputBuffer[inp.outputWire->threadId].pushTail();
 }
 ```
 The commit method looks like this:
 
 ```c++
+/** Commit takes an inst out from the head of the inflight inst queue and
+  * depending upon whether out of order memory requests are supported or
+  * not it commits the instruction, clears its destination entry from 
+  * scorebiard and remove it from the head of the inflight insts 
+*/
 void
 Execute::commit(){
-    while (executeInfo[tid].inFlightInsts->empty() && num_insts_committed != commitLimit){
+    // While issue() has already issued some instructions in the FUs 
+    while (executeInfo[tid].inFlightInsts->empty() 
+             && num_insts_committed != commitLimit){
+
         head_inflight_inst = executeInfo[tid].inFlightInsts.front();
         inst = head_inflight_inst->inst;
-        mem_response = ( head_inflight_inst->inst->inLSQ ) ? lsq.findResponse() : NULL;
+        mem_response = ( head_inflight_inst->inst->inLSQ ) ? 
+                                     lsq.findResponse() : NULL;
 
         if (mem_response)
             handleMemResponse(inst,...);
         else {
+	    // If there is a load/store inflight try to commit it before the
+	    // the head of the inflight inst
             if (!executeInfo[tid].inFUMemInsts->empty() && lsq.canRequest()) {
-                fun_inst = execeuteInfo.inFUMemInsts.fron().inst;
+                fun_inst = execeuteInfo.inFUMemInsts.front().inst;
                 fu = funcUnits[ fun_inst->fuIndex ];
-                if (!fu_inst->inLSQ && fu_inst->canEarlyIssue )// set by execute::issue()
+                if (!fu_inst->inLSQ && fu_inst->canEarlyIssue )
                 {
                     try_to_commit = true;
                     inst = fu_inst;
                 }
             }
+	    // At this point depending on whether we are doing an early
+	    // issue of mem request or actually handling the head of the 
+	    // inflight inst. inst will be pointing to the corresponding inst
             if (!completed_inst && !inst->inLSQ) 
             {
                 fu_inst = funcUnits[inst->fuIndex]->front();
@@ -207,7 +227,10 @@ Execute::commit(){
             }
             if (try_to_commit)
             {
-                discard_inst = inst->id.streamSeqNum != executeInfo[tid].streamSeqNum;
+		// If there is a stream sequence mismatch i.e. inst is a post
+		// branch inst, then discard the inst.
+                discard_inst = 
+                     inst->id.streamSeqNum != executeInfo[tid].streamSeqNum;
                 if (!discard_inst)
                     completed_inst = commitInst(...);
             
@@ -215,7 +238,7 @@ Execute::commit(){
             if (completed_inst)
             {
                 funcUnits[inst->fuIndex]->stalled = false;
-                executeInfo[tid]inFlightInsts->pop();
+                executeInfo[tid].inFlightInsts->pop();
                 scoreboard[tid].clearInstDests(inst);
             }             
         }
@@ -252,6 +275,13 @@ Execute::commitInst( inst, branch )
 ```
 
 ```c++
+/** Takes a set of instructions out to the inputBuffer. If the dependencies
+ *  are satisfied keeps issuing the instructions bhy pushing them to FU 
+ *  and marking the dests in scoreboard. It stops and removes the instruction
+ *  from the inputBuffer in case all the insts in Latch are sent to the FUs. It
+ *  also stops in the case when any of the inst is dependent on some previous
+ *  inst. In this case any of insts after that are also not scheduled
+*/
 void 
 Execute::issue ( inst )
 {
@@ -259,10 +289,11 @@ Execute::issue ( inst )
 
     do {
 	issued = false;
+	inst = insts_in->insts[thread.inputIndex];
 	for ( fu_idx = 0; fu_idx < numFuncUnits; fu_idx++ ){
 	    fu = funcUnits[fu_idx];
 	    if ( !fu->stalled && fu->provides(inst) ){
-		// Check the scoreboard to see if this inst depends on some previous inst
+		// Check scoreboard to see if inst depends on previous insts
 		if ( scoreBoard.canInstIssue(inst) ){
 		    fu->push( inst );
 		    // Mark the destination regs in the scoreboard
@@ -272,9 +303,11 @@ Execute::issue ( inst )
 		}
 	    }
 	}
-	if ( issued )
-	    executeInfo[tid].pop();	
-    } while ( inst_in && !issued )
+	if (executeInfo[tid].inputIndex == insts_in->width() ){
+	    inputBuffer[tid].pop();	
+	    inst_in = NULL;
+	}
+    } while ( inst_in && issued )
 }
 ```
 
@@ -284,10 +317,16 @@ Execute::issue ( inst )
 void
 fetch2::evaluate()
 {
-    inputBuffer[tid].push(*inp.OutputWire); // f1ToF2
+    // Mark the data in the f1ToF2 Lacth as the one to be 
+    // pushed to the inputBuffer next
+    inputBuffer[tid].setTail(*inp.OutputWire); // f1ToF2
 
     ForwardInstData &insts_out = *out.inputWire; // f2ToD
     BranchData &branch_inp = *branchInp.outputWire; // eToF1
+
+    // React to branches from execute stage to update local branch
+    // prediction structures (update the branch predictor itself)
+    updateBranchPrediction(branch_inp);    
 
     // thread will be blocked if no space in decode's inputBuffer
     fetchInfo[tid].blocked = !nextStageReserve[tid].canReserve();
@@ -297,8 +336,21 @@ fetch2::evaluate()
 		inputBuffer[tid].pop();
 
     line_in = inputBuffer[tid].front();
-   
-    while ( line_in && fetchInfo[tid].inputIndex < line_in->lineWidth )
+    
+    // Discard the instructions for which Fetch2 predicted sequence number is 
+    // different from the one with fetch1 fetched these instructions i.e. discard 
+    // the instructions which are fetched not complying to branch pred decision in fetch2
+    if ( line_in && fetchInfo[tid].expectedStreamSeqNum == line_in->id.streamSeqNum 
+              && fetchInfo[tid].predictionSeqNum != line_in->id.predictionSeqNum) {
+        inputBuffer.pop();
+    }
+
+    // fetch1 sends an entire caache line to fetch2 and not just a single inst
+    // fetch2 depending on what the output width is decodes that many insts.
+    // This decoding in hardware can be done using multiple decoders or
+    // a single decoder time-multiplexed. 
+    while ( line_in && fetchInfo[tid].inputIndex < line_in->lineWidth
+             && outputIndex < outputWidth )
     {
 	fetchInfo.pc = line_in->pc;
         dyn_inst = new MinorDynInst(line_in->id);
@@ -312,9 +364,14 @@ fetch2::evaluate()
 	insts_out.insts[output_index++] = dyn_inst;
 	if ( !prediction.isBubble() )
 	    line_in = NULL;
-	else
+	else if ( fetchInfp[tid[.inputIndex == line_in->lineWidth ) 
 	    inputBuffer[tid].pop();
    }
+   if ( !inst_out.isBubble() )
+        nextStageReserve[tid].reserve();
+
+   if ( !inp.outputWire->isBubble )
+        inputBuffer[inp.outputWire->id.threadId].pushTail();        
 }
 ```
 ## Fetch1 evaluation
