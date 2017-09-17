@@ -20,7 +20,7 @@ Many a times it gets difficult for the computer architects to get started with e
 # Minor CPU
 
 ## Pipeline
-It is a 4 stage pipelined processor. The four stages being fetch1, fetch2, decode and execute. As opposed to 5-stage DLX pipeline that every computer architecture student is familiar with this is somewhat different. The ITLB access, and fetch of the instruction from the main memory are done in fetch1. fetch2 is responsible for decoding the instruction, decode is responsible for just some book-keeping ( why this is a stage I am not sure at this point ) and execute implements the logic for issue, execute, memory, writeback and commit. All of these stages are defined as SimObjects in the class Pipeline which implements the entire pipeline. The different pipeline stages are connected via Latches ( we will talk about their implementation later in this tutorial ).  
+It is a 4 stage pipelined processor. The four stages being fetch1, fetch2, decode and execute. As opposed to 5-stage DLX pipeline that every computer architecture student is familiar with, this is somewhat different. The ITLB access, and fetch of the instruction from the main memory are done in fetch1. fetch2 is responsible for decoding the instruction, decode is responsible for just some book-keeping ( why this is a stage I am not sure at this point ) and execute implements the logic for issue, execute, memory, writeback and commit. All of these stages are defined as SimObjects in the class Pipeline which implements the entire pipeline. The different pipeline stages are connected via Latches ( we will talk about their implementation later in this tutorial ).  
 
 ```c++
 class Pipeline {
@@ -43,7 +43,7 @@ class Pipeline {
 ```
 
 ## Execute
-The way to think about an object/class is in terms of its data members as they correspond to the physical data-structures that you will build in your hardware. The methods tell how these objects interact which somewhat represents the wiring and the control. The main objects in the Execute stage are shown below:
+The way to think about an object/class is in terms of its data members, as they correspond to the physical data-structures that you will build in your hardware. The methods tell how these objects interact, which somewhat represents the wiring and the control. The main objects in the Execute stage are shown below:
 
 ```c++
 class Execute {
@@ -58,9 +58,9 @@ class Execute {
 }
 ```
 
-and then there is an evaluate() method which is the actiopn this stage has to perform at each CPU tick. As it can be seen from the implementation of Execute class that there are two wires one for input and one for output. The one named "inp" is connected to the output of dTE Latch and the one named "out" is connected to eToF1 Latch by the constructor of Pipeline class. The dToE Latch carries the instructions from decode to execute and eToF1 carries branch updates (the branch outcome is known only in execute) to the fetch1 stage. There is vector of objects of the class Scoreboard. Each element in the vector corresponds to a scoreboard for a thread. As the processor can be multithreaded this is necessary to seperate the scoreboards of different threads. In the rest of this tutorial I will assume a single threaded processor, so only scoreboard[0] will be a valid entry. Same is the case for the funcUnits which is a vector of functional unit pipelines for different threads and inputBuffer. The figure below gives a pictorial representation of how the execute stage looks like.
+Apart from the data-members, there is an evaluate() method which is the actiopn this stage has to perform at each CPU tick. As it can be seen from the implementation of Execute class that there are two wires one for input and one for output. The one named "inp" is connected to the output of dToE Latch and the one named "out" is connected to eToF1 Latch by the constructor of Pipeline class. The dToE Latch carries the instructions from decode to execute and eToF1 carries branch updates (the branch outcome is known only in execute) to the fetch1 stage. There is vector of objects of the class Scoreboard. Each element in the vector corresponds to a scoreboard for a thread. As the processor can be multithreaded this is necessary to seperate the scoreboards of different threads. In the rest of this tutorial, I will assume a single threaded processor, so only scoreboard[0] will be a valid entry. Same is the case for the funcUnits which is a vector of functional unit pipelines for different threads and inputBuffer. The figure below gives a pictorial representation of how the execute stage looks like.
 
-![gem5](gem5-logo.png)
+![execute](execute.png)
 
 ## Decode
 
@@ -78,10 +78,9 @@ class Decode {
 
 }
 ``` 
-Similar to execute stage, decode contains one input wire and one output wire, but this time the input wire is carrying the decoded instruction from fetch2 to decode and the output wire is carrying the output instruction from decode to execute. As decode does not determine the outcome of branches there is no wire going from decode to fetch1 as in the case of execute. decode also contains an alias ( reference ) to the inputBuffer object of the execute stage. This reference is used to reserve an entry in the inputBuffer of the execute stage. By doing this decode makes sure that whatever instruction it is inserting in the dTE latch will have a place in the input buffer of the execute from which it executes the instructions.  
+Similar to execute stage, decode contains one input wire and one output wire, but this time the input wire is carrying the decoded instruction from fetch2 to decode and the output wire is carrying the output instruction from decode to execute. As decode does not determine the outcome of branches there is no wire going from decode to fetch1 as in the case of execute. decode also contains an alias ( reference ) to the inputBuffer object of the execute stage. This reference is used to reserve an entry in the inputBuffer of the execute stage. By doing this decode makes sure that whatever instruction it is inserting in the dToE latch will have a place in the input buffer of the execute from which it executes the instructions.  
 
-... goes here
-![gem5](gem5-logo.png)
+![decode](decode.png)
 
 ## Fetch2
 
@@ -105,7 +104,9 @@ class Fetch2 {
 ```
 
 By now it should be clear what are the different components in the pipeline stages are. First of all there are some wires which are either input to the stage (and hence the Output of the Latch) or are outputs from the stage (Inputs to the Latches). Then there is an instruction buffer for each stage which holds entries of ForwardInstData or ForwardLine data which are just instructions wrapped in a class. Then at last there is a reference to the input buffer of the next stage and an evaluate() function which gets executed every clock tick. The main function that fetch2 is responsible for is decoding the instruction. The names can be sometimes misleading as the decode stage is not the one that does the real decoding. The decoding is indeed done in the fetch2 stage.
- 
+
+ ![fetch2](fetch2.png)
+
 ## Fetch1 
 
 Not being so verbose fetch1 looks like this:
@@ -136,7 +137,7 @@ Overall the pipeline looks like this:
 ![pipeline](pipeline.png)
 
 # The execution of the pipeline
-Now that we are aware of what are the key data-structures in each stage and how dis CPU connected to the pipeline and threads, we can look into how does the pipeline operate. Each pipeline has an event associated with it ???? which is scheduled for every clock tick. Whenever the event fires, the evaluate() function of the pipeline class is called. The evaluate method of the pipeline class calls the evaluate method on each of the pipeline stages in the reverse order. The order here is important because the updates from the later stages of the pipeline should be visible to the earlier stages of the pipeline. Think of a very simple stall logic, if the execute stage decides to stall in the current cycle, fetch1, fetch2, and decode all should stall and should not change any state in the current cycle. This would not be possible if we evaluate the fetch1, fetch2 and decode before evaluating execute stage. The converse of this is however not true, in conventional processor pipelines there are no feed-forward paths and hence the evaluation of later stages do not depend on the evaluation of earlier stages in the pipeline. Once all the stages are updated in the reverse order, the latches are advanced, which means in the two element buffer, the tail is pushed to the head and a space for new entry is made at the tail. The code looks somewhat like this:
+Now that we are aware of what are the key data-structures in each stage and how the CPU is connected to the pipeline and threads, we can look into how does the pipeline operate. Each pipeline has an event associated with it called "event" which is scheduled for every clock tick. Whenever the event fires, the evaluate() function of the pipeline class is called. The evaluate method of the pipeline class calls the evaluate method on each of the pipeline stages in the reverse order. The order here is important because the updates from the later stages of the pipeline should be visible to the earlier stages of the pipeline. Think of a very simple stall logic, if the execute stage decides to stall in the current cycle, fetch1, fetch2, and decode all should stall and should not change any state in the current cycle. This would not be possible if we evaluate the fetch1, fetch2 and decode before evaluating execute stage. The converse of this is however not true, as in conventional processor pipelines there are no feed-forward paths and hence the evaluation of later stages do not depend on the evaluation of earlier stages in the pipeline. Once all the stages are updated in the reverse order, the latches are advanced, which means in the two element buffer, the tail is pushed to the head and a space for new entry is made at the tail. The code looks somewhat like this:
 
 ```c++
 void                                                                     
@@ -420,3 +421,18 @@ fetch1::evaluate()
 ```
 # Instructions
 Each cpu has its own class for dynamic instruction for e.g. for minor cpu this is defined in dyn_inst.cc as class MinorDynInst. Each Dynamic instruction class has an object of class StaticInst. StaticInst is an abstract class whose execute() method is purely virtual. It provides a base abstract class for all the different kinds of instructions in the ISA. Based on which ISA you are compiling gem5 with, the build system generates a class for each of the instructions in the ISA which is derived from StaticInst class and it has the execute method which can be used to execute the instruction and update the register file. Go to the file build/RISCV/arch/riscv/generated/decoder-ns.hh.inc and you will see all the classes for different instructions. The execute method for these classes are implemented in build/RISCV/arch/riscv/generated/exec-ns.cc.inc . To know more on how these classes got built with gem5 please refer to my tutorial on [How to add instruction to RISCV ISA and simulate on gem5](). gem5 minor cpu model does not read the registers while being issued to the functional unit pipelines. Instead, the function unit pipelines are just to model the delays and all the execution is done by calling execute() method in commitInst() method in the execute unit. 
+
+# Instruction Fetch
+
+The important part of instruction fetch is virtual address translation. This is done by calling cpu.thread.itb.translateTiming(request). The TLB is implemented in srch/riscv/tlb.cc and calls thread.threadContext.process.pTable.translate(req). Process class is implemented in sim/process.hh and has pTable of Class PageTableBase implemented in mem/page_table.cc. The translate method tries to translate the virtual address to a physical address and then stores the physical address in req.paddr. translateTimming(req, translation) then calls translation->finish() which calls the finish() method on the BaseTLB::Translation object in the fetch1 unit. 
+
+# Instruction Decoding
+The fetch2 stage has decoder which belongs to the class TheISA::Decoder. For RISCV ISA its implementation can be found in src/arch/riscv/decoder.hh. The Decoder has two important functions moreBytes(pc,inst) and decode(nextPC). moreBytes is used to copy the 32-bit instruction into the decoder so that when decode() is invoked it can decode the instruction. However, each decoder calls a GenericISA::BasicDecodeCache::decode() method. This method is implemented in src/arch/generic/decode_cache.cc. This looksup if it has already decoded this instruction in the decodePages and instMap cache structures, if it does not find it there it calls the decodeInst() method of the original decoder. This is a templated method in src/arch/isa_parser.py. Whenever gem5 is compiled for specific ISA for eg. RISCV build/RISCV/arch/riscv/generated/decode-method.cc.inc gets generated which has the decodeInst(machInst) method. It mostly does nothing, just sees the OPCODE and FUNC bits of the instruction and in a switch case create an object of that particular instruction by calling its constructor. All these instruction classes are defined in build/RISCV/arch/riscv/generated/decoder-ns.hh.inc and are derived from the StaticInst class. The constructors of the instructions' classes and the base StaticInst class initialize the members like number of source and destinations registers, the immediate value, machInst(actual instruction in binary). The constructors of these instruction classes are given in build/RISCV/arch/riscv/generated/decoder-ns.cc.inc with their class definitions in build/RISCV/arch/riscv/generated/decoder-ns.hh.inc. To create a dynamic instruction the machine instruction is passed to the decoder which creates a StaticInt object and returns it. This StaticInst object is then stick into the object of dynamic instruction.
+
+# Squashing in minor cpu
+
+
+# Caches in gem5
+L1Cache, L1_ICache, L1_DCache, L2Cache, IOCache and  PageTableWalkerCache all are derived from class Cache by ovewriting the latency and size configurations. class Cache is defined in src/mem/cache/cache.hh and is the child class of BaseCache in src/mem/cache/base.hh.
+
+ 
