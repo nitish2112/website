@@ -36,7 +36,7 @@ be able to view your website.
 ```bash
 % cd public
 % git commit -a -m "XYZ"
-& git push
+% git push
 ```
 This will push your repository to nitish2112.github.io and the changes in your
 website will be available publicly.

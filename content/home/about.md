@@ -32,5 +32,10 @@ weight = 1
 
 # Biography
 
-I am a PhD student in Computer System Laboratory at Cornell University. My research interests are computer architecture, high level synthesis and very large scale integration. You can find my [CV](home/CV.pdf).
+I am a PhD student in Computer System Laboratory at Cornell University. My research interests are computer architecture, high level synthesis and very large scale integration. I am being advised by Prof. David Albonesi and Prof. Zhiru Zhang. You can find my [CV](home/CV.pdf).
+
+# Some cool stuff
+
+How to write a bootloader:
+- http://3zanders.co.uk/2017/10/13/writing-a-bootloader/
 
