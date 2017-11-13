@@ -11,10 +11,13 @@ tags = ["gem5"]
 
 +++
 
-This is an introduction tutorial on gem5 minor cpu model. 
+This is a tutorial on how to add statistics in gem5. 
 
+<!--more-->
 -- All the stats are defined in the namespace Stats. namespace Stats
    is spread across the following files:
+
+```bash
    -- src/base/statistics.hh
    -- src/sim/stat\_control.hh
    -- src/base/stats/info.hh
@@ -23,7 +26,7 @@ This is an introduction tutorial on gem5 minor cpu model.
    -- src/base/stats/type.hh
    -- src/python/pybind11/stats.cc
    -- sim/power/mathexpr\_powermodel.hh
-   
+```   
 The schedStatEvent() function is used to dump statistics either all at once or
 periodically. This is defined in src/sim/stat\_control.cc. schedStatEvent() 
 creates a new StatEvent. The default values for when is curTick and repeat is 

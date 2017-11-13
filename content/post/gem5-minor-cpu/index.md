@@ -509,7 +509,46 @@ LSQ::LSQRequest::makePacket() {
 
 ```
 # Caches in gem5
-L1Cache, L1_ICache, L1_DCache, L2Cache, IOCache and  PageTableWalkerCache all are derived from class Cache by ovewriting the latency and size configurations. class Cache is defined in src/mem/cache/cache.hh and is the child class of BaseCache in src/mem/cache/base.hh.
+L1Cache, L1_ICache, L1_DCache, L2Cache, IOCache and  PageTableWalkerCache all are derived from class Cache by ovewriting the latency and size configurations. class Cache is defined in src/mem/cache/cache.hh and is the child class of BaseCache in src/mem/cache/base.hh. 
+
+The recvTimingReq() method for the non-blocking cache looks like this:
+
+```c++
+Cache::recvTimingReq() {
+  CacheBlk* blk = NULL; 
+  PacketList writebacks;
+  bool satisfied = access(pkt, blk, writebacks);
+  doWritebacks(writebacks);
+  if (satisfied) {
+    if (pkt->needsResponse()) {
+      pkt->makeTimingResponse();
+      cpuSidePort->schedTimingResp(pkt, request_time);
+    }
+  }
+}
+
+Cache::access(pkt, blk, writebacks) {
+  blk = tag->accessBlock(pkt);
+  
+}
+
+LRU::accessBlock(pkt, &lat) { 
+  // LRU class is derived from BaseSetAssoc class
+  CacheBlk * blk = BaseSetAssoc::accessBlock(pkt->getAddr(), &lat);
+  // move the block to the head of MRU
+  sets[blk->set].moveToHead(blk); 
+  return blk;
+}
+
+BaseSetAssoc::accessBlock(addr, &lat) {
+  Addr tag = extractTag(addr);
+  int set = extractSet(addr);
+  blk = sets[set].findBlk(tag);
+  lat = accessLatency;
+}
+```
+
+
 
 # Function Units
 The function units and what operations they can perform is described in MinorCPU.py by setting the variable "executeFuncUnits". It by default uses MinorDefaultFUPool class which is defined in MinorCPU.py as well and creates a pool of function units (2: Int, 1: Int-mul, 1: int-div, 1: float-simd, 1: mem, 1: misc)

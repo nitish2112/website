@@ -10,7 +10,7 @@ tags = ["gem5"]
   image = ""
 
 +++
-Here I will tyalk about miscellaneous things that you can do with gem5.
+Here I will talk about miscellaneous things that you can use with gem5.
 <!--more-->
 
 # Adding an option to gem5

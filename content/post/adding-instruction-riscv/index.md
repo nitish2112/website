@@ -131,3 +131,28 @@ $ riscv64-unknown-elf-objdump -dC mod > mod.dump
 Now open mod.dump and you will be able to see that mod instruction has been used.
 
 I will later add how you can modify the ISA simulator to test the newly added instruction and how you can modify gem5 to be able to exexcute this instruction.
+
+# Adding the new instruction to gem5
+
+To add the instruction gem5 we need to modify arch/riscv/decoder.isa like this:
+
+```C
+    0x33: decode FUNCT3 {
+        format ROp {
+            0x0: decode FUNCT7 {
+                0x0: add({{
+                    Rd = Rs1_sd + Rs2_sd;
+                }});
+                0x1: mul({{
+                    Rd = Rs1_sd*Rs2_sd;
+                }}, IntMultOp);
+                0x10: mod({{
+                    Rd = Rs1_sd + Rs2_sd;
+                }});
+                0x20: sub({{
+                    Rd = Rs1_sd - Rs2_sd;
+                }});
+            }
+```
+
+Here 0x33 is the opcode and 0x10 is the the funct7. The details about different fields in the RISC-V ISA can be seen from page no. 50 of the manual [here](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2014/EECS-2014-54.pdf).
