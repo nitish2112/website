@@ -147,7 +147,7 @@ To add the instruction gem5 we need to modify arch/riscv/decoder.isa like this:
                     Rd = Rs1_sd*Rs2_sd;
                 }}, IntMultOp);
                 0x10: mod({{
-                    Rd = Rs1_sd + Rs2_sd;
+                    Rd = Rs1_sd % Rs2_sd;
                 }});
                 0x20: sub({{
                     Rd = Rs1_sd - Rs2_sd;
