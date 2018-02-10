@@ -32,20 +32,19 @@ mod r1, r2, r3
 Semantics:
 R[r1] = R[r2] % R[r3]
 ```
-Open the file riscv-opcodes/opcodes, here you will be able to see the various opcodes and instruction bits assigned to various instructions. Assigned an unused instruction to modulo inst. I am adding it ner the "add" instruction
+Open the file riscv-opcodes/opcodes, here you will be able to see the various opcodes and instruction bits assigned to various instructions. Assigned an unused instruction to modulo inst. 
 
 ```bash
-add     rd rs1 rs2 31..25=0  14..12=0 6..2=0x0C 1..0=3                          
-sub     rd rs1 rs2 31..25=32 14..12=0 6..2=0x0C 1..0=3 
-mod     rd rs1 rs2 31..25=16 14..12=0 6..2=0x0C 1..0=3                         
-sll     rd rs1 rs2 31..25=0  14..12=1 6..2=0x0C 1..0=3                          
-slt     rd rs1 rs2 31..25=0  14..12=2 6..2=0x0C 1..0=3                          
-sltu    rd rs1 rs2 31..25=0  14..12=3 6..2=0x0C 1..0=3                          
-xor     rd rs1 rs2 31..25=0  14..12=4 6..2=0x0C 1..0=3                          
-srl     rd rs1 rs2 31..25=0  14..12=5 6..2=0x0C 1..0=3                          
-sra     rd rs1 rs2 31..25=32 14..12=5 6..2=0x0C 1..0=3                          
-or      rd rs1 rs2 31..25=0  14..12=6 6..2=0x0C 1..0=3                          
-and     rd rs1 rs2 31..25=0  14..12=7 6..2=0x0C 1..0=3 
+sra     rd rs1 rs2 31..25=32 14..12=5 6..2=0x0C 1..0=3
+or      rd rs1 rs2 31..25=0  14..12=6 6..2=0x0C 1..0=3
+and     rd rs1 rs2 31..25=0  14..12=7 6..2=0x0C 1..0=3
+
+mod     rd rs1 rs2 31..25=1  14..12=0 6..2=0x1A 1..0=3
+
+addiw   rd rs1 imm12            14..12=0 6..2=0x06 1..0=3
+slliw   rd rs1 31..25=0  shamtw 14..12=1 6..2=0x06 1..0=3
+srliw   rd rs1 31..25=0  shamtw 14..12=5 6..2=0x06 1..0=3
+sraiw   rd rs1 31..25=32 shamtw 14..12=5 6..2=0x06 1..0=3
 ```
 
 Now run the following command:
@@ -56,8 +55,8 @@ cat opcodes-pseudo opcodes opcodes-rvc opcodes-rvc-pseudo opcodes-custom | ./par
 Open file temp.h and you will find the following two lines:
 
 ```C
-#define MATCH_MOD 0x20000033                                                    
-#define MASK_MOD  0xfe00707f
+#define MATCH_MOD 0x200006b                                                    
+#define MASK_MOD 0xfe00707f
 ```
 Add these two lines in riscv-gnu-toolchain/riscv-binutils-gdb/include/opcode/riscv-opc.h
 
@@ -76,7 +75,6 @@ const struct riscv_opcode riscv_opcodes[] =
 ....
 ....
 ....
-{"add",       "I",   "d,s,t",  MATCH_ADD, MASK_ADD, match_opcode, 0 }
 {"mod",       "I",   "d,s,t",  MATCH_MOD, MASK_MOD, match_opcode, 0 }
 ....
 ....
@@ -89,26 +87,20 @@ Lets write a program and see if the RISCV assembler can use the mod instruction:
 ```C
 #include <stdio,h>
 
-int a[] = {11,22,33,44,55};
-int b[] = {10,10,10,10,10};
-int c[4];
-
 int main(){
-  int i;
-  for ( i = 0; i < 4; i++ ){
-     asm volatile
-     (
-       "mod   %[z], %[x], %[y]\n\t"
-       : [z] "=r" (c[i])
-       : [x] "r" (a[i]), [y] "r" (b[i])
-     )  
-  }
+  int a,b,c;
+  a = 5;
+  b = 2;
+  asm volatile
+  (
+    "mod   %[z], %[x], %[y]\n\t"
+    : [z] "=r" (c)
+    : [x] "r" (a), [y] "r" (b)
+  )  
  
-  for ( int i = 0; i < 4; i++ ){
-      if ( c[i] != i+1 ){
-         printf("\n[[FAILED]]\n");
-         return -1;
-      }
+  if ( c != 1 ){
+     printf("\n[[FAILED]]\n");
+     return -1;
   }
   
   printf("\n[[PASSED]]\n");
@@ -156,3 +148,16 @@ To add the instruction gem5 we need to modify arch/riscv/decoder.isa like this:
 ```
 
 Here 0x33 is the opcode and 0x10 is the the funct7. The details about different fields in the RISC-V ISA can be seen from page no. 50 of the manual [here](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2014/EECS-2014-54.pdf).
+
+Note the instruction matching in the assembler is done something like this:
+
+```C
+((insn ^ op->match) & op->mask) == 0;
+```
+See match_opcode() fucntion in riscv-gnu-toolchain/riscv-binutils-gdb/opcodes/riscv-opc.c 
+
+op->match and op->mask are the MATCH and MASK macros that we defined.  
+
+This means if you just see the 1 bits in the MATCH in the instruction and flip them,
+and then see the mask bits then everything should be 0. MASK tells which bits are
+of interest and MATCH tells what is the configuration required.

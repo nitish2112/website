@@ -431,6 +431,106 @@ The fetch2 stage has decoder which belongs to the class TheISA::Decoder. For RIS
 
 # Squashing in minor cpu
 
+# Function Units
+
+```c++
+// Here QeueuedInst is just a wrapper around MinorDynInst
+typedef SelfStallingPipeline< QueuedInst, ReportTraitsAdaptor<QueuedInst> > FUPipelineBase;
+
+class FUPipeline : public FUPipelineBase, public FuncUnit {
+  LaneFU &description; 
+  std::bitset<Num_OpClasses> capabilityList;  
+}
+
+clas LaneFU : public SimObject {
+  Cycles opLat; // Latency
+  Cycles issueLat; // Delay after issuing an operation before next is issued.
+                   // normally 1 due to pipelining, but for divide unit as it 
+                   // is not pipelined it is > 1
+
+  std::vector<LaneFUTiming *> timings;  
+}
+
+class LaneFUTiming : public SimObject {
+  Cycles extraCommitLat;
+  Cycles extraAssumedLat; // extra delay to show in scoreboard after inst leaving
+                          // the pipeline. Normally 0 but for mult it is 2
+
+   
+   /* for each of this instruction's source registers (in srcRegs
+   *  order). The offsets are subtracted from scoreboard returnCycle times.
+   *  For example, for an instruction type with 3 source registers,
+   *  [2, 1, 2] will allow the instruction to issue upto 2 cycles early
+   *  for dependencies on the 1st and 3rd register and upto 1 cycle
+   *  early on the 2nd. */
+
+  // ?? not so sure but if the list has a single number then latencies for
+  // all the src regs is the same?? eg. for LaneDefaultIntFU it is [2]
+  // and LaneDefaultIntMulFU it is [0]
+  std::vector<Cycles> srcRegsRelativeLats; 
+  
+}
+```
+
+# ScoreBoard
+
+```c++
+class Scoreborad : public Named {
+  std::vector<int> fuIndices; 
+
+  // number of results which are not predictable ( memory loads in general )
+  std::vector<Index> numUnpredictableResults;
+
+  // estimated cycle number that the result will be presented.
+  std::vector<Cycles> returnCycle;
+}
+
+// Called before issuing an instruction
+void Scoreboard::markupInstDests(Cycles retire_time, bool mark_unpredictable ) {
+  for ( dest_index = 0; dest_index < num_dests; dest_index++ ) {
+    reg = flattenRegIndex(staticInst->destRegIdx(dest_index));
+    numResults[reg]++;
+    if (mark_unpredictable)
+      numUnpredictableResults[reg]++;
+    returnCycle[reg] = retire_time; // retire_time is curCycle() + inst->fu->opLat
+    fuIndices[reg] = inst->fuIndex; // save the function unit id for this dest reg
+  }
+} 
+
+bool Scoreboard::canInstIssue( std::vector<Cycles> *src_reg_relative_latencies,
+                               // srcRegRelativeLats for that inst. see LaneFUTiming above
+			       std::vector<bool> *cant_forward_from_fu_indices ) {
+
+   for ( src_index = 0; src_index < inst->numSrcRegs(); src_index++ ) {
+     reg = flattenRegIndex(staticInst->srcRegIdx(src_index));
+     Cycles relative_latency = src_index >= src_reg_relative_latencies->size()-1 ?
+			         src_reg_relative_latencies->back() // last element
+			       : *(src_reg_relative_latencies)[src_index];
+
+     if ( returnCycle[reg] > curCycle() + relativeLatency )
+       return false;     
+   }
+
+   return true;
+}
+			      
+void Scoreboard::clearInstDests(inst, bool clear_unpredictable) {
+
+  for ( dest_index = 0; dest_index < num_dests; dest_index++ ) {
+    RegIndex reg = inst->flatDestRegIdx[dest_index];
+    if ( clear_unpredictable )
+      numUnpredictableResults[reg]--;
+
+    numResults[reg]--;
+
+    if (numResults[reg] == 0) {
+      returnCycle[reg] = Cycles(0);
+      writingInst[reg] = 0;
+      fuIndices[reg] = -1;
+    }
+  }
+} 
+```
 # Load-Store queue (LSQ)
 
 Load store queue is used for performing load/store operations. It has three major hardware FIFOs: requests queue, transfers queue, and store buffer. Requests queue holds the memory requests which have been sent to the TLB but haven't received the response for. Transfers queue holds the memory requests which have been issued to the memory system and are waiting for a response. Store buffer has all the stores that have been committed but haven't been written to memory yet. Before trying to issue a load from requests queue to memory, store buffer is checked to see if the previous store contains the data. The main top level function for LSQ is step()  which is called in the evaluate() method of the execute unit. 
