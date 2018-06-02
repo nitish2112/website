@@ -2,7 +2,7 @@
 highlight = true
 math = false
 date = "2017-07-10T10:09:32-04:00"
-title = "Adding custom instruction to RISCV ISA and running it on gem5"
+title = "Adding custom instruction to RISCV ISA and running it on gem5 and spike"
 tags = ["gem5"]
 
 [header]
@@ -161,3 +161,36 @@ op->match and op->mask are the MATCH and MASK macros that we defined.
 This means if you just see the 1 bits in the MATCH in the instruction and flip them,
 and then see the mask bits then everything should be 0. MASK tells which bits are
 of interest and MATCH tells what is the configuration required.
+
+# Adding the custom instruction to spike ISA simulator
+
+In the riscv-isa-sim/riscv/encoding.h add the following lines:
+
+```
+#define MATCH_MOD 0x200006b                                                    
+#define MASK_MOD 0xfe00707f
+...
+DECLARE_INSN(add, MATCH_MOD, MASK_MOD)
+```
+Create a file riscv-isa-sim/riscv/insns/mod.h and add these lines:
+
+```
+WRITE_RD(sext_xlen(RS1 % RS2));
+```
+
+Add this file to riscv-isa-sim/riscv/riscv.mk.in
+```
+riscv_insn_list = \
+      ...
+      mod \
+      ...
+```
+
+In riscv-isa-sim/spike_main/disasm.cc add the following lines:
+
+```
+DEFINE_RTYPE(mod);
+```
+
+And now build riscv-tools again. The "mod" instruction has been added to spike
+simulator

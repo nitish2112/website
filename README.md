@@ -3,7 +3,7 @@
 ```bash
 % sudo apt-get install golang-go
 % wget https://github.com/gohugoio/hugo/releases/download/v0.27.1/hugo_0.27.1_Linux-64bit.deb
-% dpkg -i hugo_0.27.1_Linux-64bit.deb
+% sudo dpkg -i hugo_0.27.1_Linux-64bit.deb
 ```
 Note you can also find other releases of hugo on:
 
@@ -17,7 +17,7 @@ https://github.com/gohugoio/hugo/releases/
 % git clone git@github.com:nitish2112/website.git
 % cd website
 % git submodule update --init
-% git clone git@github.com:nitish2112/nitish2112.github.io.git public
+% git clone https://github.com/nitish2112/nitish2112.github.io.git public
 ```
 
 Now you can make your chnages in the website/contents folder and run the 

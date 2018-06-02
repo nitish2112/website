@@ -13,7 +13,7 @@ publication_short = "In *FPGA, 2017*"
 selected = true
 title = "Accelerating Face Detection on Programmable SoC Using C-Based Synthesis"
 url_code = "https://github.com/cornell-zhang/facedetect-fpga"
-url_pdf = "http://dl.acm.org/citation.cfm?id=3021753&CFID=737401378&CFTOKEN=12353900"
+url_pdf = "http://www.csl.cornell.edu/~zhiruz/pdfs/facedetect-fpga2017.pdf"
 url_slides = "http://www.isfpga.org/slides/D3_S1_04.pdf"
 
 # Optional featured image (relative to `static/img/` folder).
