@@ -24,7 +24,7 @@ $ git submodule update --init --recursive
 $ export RISCV=/path/to/install/riscv/toolchain
 $ ./build.sh
 ```
-This will build the riscv toolchain. Now we will add a "modulo" instruction to the ISA. The isntruction and its semantics are given below:
+This will build the riscv toolchain. Now we will add a "modulo" instruction to the ISA. The instruction and its semantics are given below:
 
 ```bash
 mod r1, r2, r3
