@@ -85,7 +85,7 @@ Now compile the riscv-gnu-toolchain again and you are done.
 Lets write a program and see if the RISCV assembler can use the mod instruction:
 
 ```C
-#include <stdio,h>
+#include <stdio.h>
 
 int main(){
   int a,b,c;
