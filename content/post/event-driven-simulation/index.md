@@ -10,9 +10,9 @@ tags = ["gem5"]
   image = ""
 
 +++
+<!--more-->
 
 This is an introduction tutorial on different types of simulation techniques and a brief overview of event driven simulators.
-<!--more-->
 
 # **Simulators**
 A simulator is a software performance model of a processor architecture which runs on a host machine. Simulation is cheap and much more accurate than analytical models. 

@@ -10,12 +10,12 @@ tags = ["gem5"]
   image = ""
 
 +++
+<!--more-->
 
 This is an introduction tutorial on gem5 minor cpu model. 
 
-Many a times it gets difficult for the computer architects to get started with event-driven simulators. This document is written to target that audience and provide an overview of the minor cpu model in gem5 which implements an in-order pipelined processor. If you have never worked on event-driven simulators and don't know what they are, there is a cool video [here](https://www.youtube.com/watch?v=irbshkdVFao). This tutorial will help the reader to understand how the event-driven minor cpu model is implemented in gem5 and will not go much into details of how to compile and build gem5, how to add tracing and what are ports and how do they work. This information can be found in [Learning Gem5](http://learning.gem5.org/book/index.html). OK!! So lets get started. 
+Many a times it gets difficult for the computer architects to get started with event-driven simulators. This document is written to target that audience and provide an overview of the minor cpu model in gem5 which implements an in-order pipelined processor. If you have never worked on event-driven simulators and don't know what they are, there is a video [here](https://www.youtube.com/watch?v=irbshkdVFao). This tutorial will help the reader to understand how the event-driven minor cpu model is implemented in gem5 and will not go much into details of how to compile and build gem5, how to add tracing and what are ports and how do they work. This information can be found in [Learning Gem5](http://learning.gem5.org/book/index.html).
 
-<!--more-->
 
 # Minor CPU
 
@@ -202,7 +202,7 @@ Execute::commit(){
                                      lsq.findResponse() : NULL;
 
         if (mem_response)
-            handleMemResponse(inst,...);
+            handleMemResponse(inst, mem_response, ...);
         else {
 	    // If there is a load/store inflight try to commit it before the
 	    // the head of the inflight inst
@@ -243,8 +243,28 @@ Execute::commit(){
                 scoreboard[tid].clearInstDests(inst);
             }             
         }
+    }                 
+}
+
+LSQ::findResponse(inst) {
+  if (!transfers.empty()) {
+    LSQRequest* req = transfers.front();
+    if ((req->inst->id == inst->id) && // same instruction
+        (req->isComplete()) ) { // request must be complete
+       return req;
     }
-                 
+  }
+  return NULL;
+}
+
+Execute::handleMemResponse (inst, LSQRequest mem_response, ...) {
+  inst->staticInst->completeAcc(...);
+  lsq.popResponse();
+  ...
+}
+
+LSQ::popResponse(...){
+  transfers.pop();
 }
 ```
 
@@ -533,7 +553,7 @@ void Scoreboard::clearInstDests(inst, bool clear_unpredictable) {
 ```
 # Load-Store queue (LSQ)
 
-Load store queue is used for performing load/store operations. It has three major hardware FIFOs: requests queue, transfers queue, and store buffer. Requests queue holds the memory requests which have been sent to the TLB but haven't received the response for. Transfers queue holds the memory requests which have been issued to the memory system and are waiting for a response. Store buffer has all the stores that have been committed but haven't been written to memory yet. Before trying to issue a load from requests queue to memory, store buffer is checked to see if the previous store contains the data. The main top level function for LSQ is step()  which is called in the evaluate() method of the execute unit. 
+Load store queue is used for performing load/store operations. It has three major hardware FIFOs: requests queue, transfers queue, and store buffer. Requests queue holds the memory requests which have been sent to the TLB but haven't received the response for. Transfers queue holds the memory requests which have been issued to the memory system and are waiting for a response. When the responses arrive, the corresponding request is searched in the transfers queue (CAM like search) and its status is set to be Completed. These requests still remain in the transfers queue until the execute unit actually tries to commit the load/store instruction. When execute unit tries to commit load/store, it looks at the front of the transfers queue and pops out the element if the memory access was completed (see the execute unit description above). Store buffer has all the stores that have been committed but haven't been written to memory yet. Before trying to issue a load from requests queue to memory, store buffer is checked to see if the previous store contains the data. The main top level function for LSQ is step()  which is called in the evaluate() method of the execute unit. 
 
 ```c++
 LSQ::step() {
@@ -542,7 +562,7 @@ LSQ::step() {
 }
 
 LSQ::tryToSendToTransfers(LSQRequest* request) {
-   // note that LSQRequest is not of type Request but a derived class 
+  // note that LSQRequest is not of type Request but a derived class 
   // from BaseTLB::Translation and Packet::SenderState
   LSQRequest request = requests.front();
   
@@ -563,6 +583,17 @@ LSQ::tryToSendToTransfers(LSQRequest* request) {
 LSQ::tryToSend(LSQRequest* request) {
   dacachePort.sendTimingRequest(request->packet);
   // Set the state of the request appropriately depending on success or failure.
+}
+
+LSQ::recvTimingResp(Packet* response) {
+  // the packet for memory requests contain LSQRequest pointers (can think of 
+  // ids associated to each request that has been sent so far).
+  // These LSQRequests are stored in transfers queue. When a memory response
+  // is received the corresponding entry is searched in transfers queue and
+  // its status is set to Complete. In real hardware this process should be
+  // to search for the corresponding id location and then flip the status bit.
+  // Search in a queue can be done using CAM based approach.
+  response->popSenderState()->setStatus(Complete);
 }
 
 LSQ::StoreBuffer::step() {
@@ -611,12 +642,84 @@ LSQ::LSQRequest::makePacket() {
 # Caches in gem5
 L1Cache, L1_ICache, L1_DCache, L2Cache, IOCache and  PageTableWalkerCache all are derived from class Cache by ovewriting the latency and size configurations. class Cache is defined in src/mem/cache/cache.hh and is the child class of BaseCache in src/mem/cache/base.hh. 
 
+```c++
+class BaseCache {
+  // internal data structures
+  MSHRQueue mshrQueue;
+  WriteQueue writeBuffer;
+
+  // parameters
+  int blkSize;
+  Cycles lookupLatency;
+  Cycles dataLatency;
+  Cycles forwardLatency;
+  Cycles fillLatency;
+  Cycles responseLatency;
+  int numTargets;
+};
+
+class Cache : public BaseCache {
+  // internal data structures
+  BaseTags *tags;
+  BasePrefetcher *prefetcher;
+};
+
+class BaseTags {
+  int blkSize; // cache line size
+               // since cache line size should be same for all cache levels
+               // blkSize is a property of "system" and not just a cache.
+               // hence this is set in config by "system.cache_line_size = .."
+               // and Tags.py copies that parameter into blkSkize variable 
+  int size; // size of cache
+  ...
+};
+
+/* There are many types of tag stores derived from BbaseTags
+ * BaseTags -> BaseSetAssoc  ------> LRU
+ *            (set associative |---> RandomRepl
+ *                 caches)
+ * BaseTags -> FALRU -> 
+ *           (fully assoc.
+ *               LRU)
+ */
+```
+Which cache parameters we actually use is set in configs/common/Caches.py.
+The specific tag store can either be set in common/caches/Caches.py. The
+default tag store can be seen in src/mem/caches/Caches.py as LRU mostly.
+Now, since LRU is most common, let's understand LRU tag store
+
+```c++
+class BaseSetAssoc : public BaseTags {
+  // data structures
+  CacheSet<CacheBlk>* sets; // cache sets
+  CacheBlk* blks; // cache blocks
+  uint8_t* dataBlks; // data blocks (1 per cache block)
+
+  // parameters
+  int assoc; // associativity
+  itn numSets;
+};
+
+class CacheBlk  {
+  enum CacheBlkStatusBits {..., BlkDirty, ....};
+
+  Addr tag; // data block tag value
+  unit8_t* data; // contains copy of data for easy access
+  int set, way; // set and ay this block belongs to
+};
+
+template <class BlkType>
+class CacheSet {
+  int assoc; // associativity of this set
+  BlkType **blks; // cache blocks in this set
+};
+```
 The recvTimingReq() method for the non-blocking cache looks like this:
 
 ```c++
 Cache::recvTimingReq() {
   CacheBlk* blk = NULL; 
-  PacketList writebacks;
+  std::list<PacketPtr> writebacks;
   bool satisfied = access(pkt, blk, writebacks);
   doWritebacks(writebacks);
   if (satisfied) {
@@ -629,22 +732,33 @@ Cache::recvTimingReq() {
 
 Cache::access(pkt, blk, writebacks) {
   blk = tag->accessBlock(pkt);
-  
 }
 
-LRU::accessBlock(pkt, &lat) { 
+LRU::accessBlock(pkt, is_secure, &lat) { 
   // LRU class is derived from BaseSetAssoc class
-  CacheBlk * blk = BaseSetAssoc::accessBlock(pkt->getAddr(), &lat);
+  CacheBlk * blk = BaseSetAssoc::accessBlock(pkt->getAddr(), is_secure, &lat);
   // move the block to the head of MRU
   sets[blk->set].moveToHead(blk); 
   return blk;
 }
 
-BaseSetAssoc::accessBlock(addr, &lat) {
+BaseSetAssoc::accessBlock(addr, is_secure, &lat) {
   Addr tag = extractTag(addr);
   int set = extractSet(addr);
   blk = sets[set].findBlk(tag);
   lat = accessLatency;
+}
+
+template <class Blktype>
+CacheSet<Blktype>::findBlk(tag, is_secure) {
+  for (int i = 0; i < assoc; ++i) {
+    if (blks[i]->tag == tag && blks[i]->isValid() &&
+      blks[i]->isSecure() == is_secure) {
+      way_id = i;
+      return blks[i];
+    }
+  }
+  return nullptr;
 }
 ```
 

@@ -10,10 +10,9 @@ tags = ["gem5"]
   image = ""
 
 +++
-
+<!--more-->
 This is a tutorial on how to add statistics in gem5. 
 
-<!--more-->
 -- All the stats are defined in the namespace Stats. namespace Stats
    is spread across the following files:
 

@@ -10,8 +10,10 @@ tags = ["halide"]
   image = ""
 
 +++
-Here I will talk about Halide
 <!--more-->
+*THIS PAGE IS UNDER CONSTRUCTION*
+
+Here I will talk about Halide
 
 In order to learn Halide, let's start with a simple example and see how Halide 
 will produce the code for that example

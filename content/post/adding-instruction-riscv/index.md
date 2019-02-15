@@ -11,10 +11,8 @@ tags = ["gem5"]
 
 +++
 
-This is a tutorial on how to add an instruction to the RISCV ISA, how to write program with the special instruction. I will also talk about how to add the new instruction to RISCV assembler and how to execute it on gem5.
-
-
 <!--more-->
+This is a tutorial on how to add an instruction to the RISCV ISA, how to write program with the special instruction. I will also talk about how to add the new instruction to RISCV assembler and how to execute it on gem5.
 
 First of all download and install the riscv-tools:
 

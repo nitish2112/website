@@ -23,7 +23,7 @@ relativeURLs = true
 
 [params]
   name = "Nitish"
-  role = "PhD student at Computer System Laboratory"
+  role = "PhD candidate at Computer System Laboratory"
   organization = "Cornell University"
   organization_url = ""
   avatar = "portrait.jpg"
