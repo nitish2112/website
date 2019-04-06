@@ -8,7 +8,7 @@ publication = "In *IEEE COMMUNICATIONS LETTERS, VOL. 17, NO. 9, SEPTEMBER 2013*"
 publication_short = "In *IEEE Comm Letters, 2013*"
 selected = true
 title = "Flexible and Dynamic Power Allocation in Broadband Multi-Beam Satellites"
-url_pdf = "http://ieeexplore.ieee.org/abstract/document/6584534/"
+url_pdf = "publication/ieee-comm.pdf"
 
 # Optional featured image (relative to `static/img/` folder).
 [header]

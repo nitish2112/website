@@ -8,7 +8,7 @@ publication = "In *IEEE Transactions on Very Large Scale Integration (VLSI) Syst
 publication_short = "In *TVLSI, 2019*"
 selected = true
 title = "Operation Dependent Frequency Scaling Using Desynchronization"
-url_pdf = "https://ieeexplore.ieee.org/abstract/document/8588378"
+url_pdf = "publication/async-tvlsi.pdf"
 
 # Optional featured image (relative to `static/img/` folder).
 [header]
