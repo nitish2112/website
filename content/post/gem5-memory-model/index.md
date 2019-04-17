@@ -15,17 +15,17 @@ tags = ["gem5"]
 
 Gem5 has following memory models (see src/mem/DRAMCtrl.py):
 
-1)   DDR3_1600_8x8        : (1.6   x 8  x 8/8   = 12.8 GBps)
-2)   HMC_2500_1x32        : (2.5   x 1  x 32/8  = 10.0 GBps)
-3)   DDR3_2133_8x8        : (2.133 x 8  x 8/8   = 17.0 GBps)
-4)   DDR4_2400_16x4       : (2.4   x 16 x 4/8   = 19.2 GBps)
-5)   DDR4_2400_8x8        : (2.4   x 8  x 8/8   = 19.2 GBps)
-6)   DDR4_2400_4x16       : (2.4   x 4  x 16/8  = 19.2 GBps)
-7)   LPDDR2_S4_1066_1x32  : (1.066 x 1  x 32/8  =  4.3 GBps)
-8)   LPDDR3_1600_1x32     : (1.6   x 1  x 32/8  =  6.4 GBps)
-9)   GDDR5_4000_2x32      : (4.0   x 2  x 32/8  = 32.0 GBps)
-10)  HBM_1000_4H_1x128    : (1.0   x 1  x 128/8 = 16.0 GBps)
-11)  HBM_1000_4H_1x64
+1)   DDR3_1600_8x8        : (1.6   x 8  x 8/8   = 12.8 GBps)  
+2)   HMC_2500_1x32        : (2.5   x 1  x 32/8  = 10.0 GBps)  
+3)   DDR3_2133_8x8        : (2.133 x 8  x 8/8   = 17.0 GBps)  
+4)   DDR4_2400_16x4       : (2.4   x 16 x 4/8   = 19.2 GBps)  
+5)   DDR4_2400_8x8        : (2.4   x 8  x 8/8   = 19.2 GBps)  
+6)   DDR4_2400_4x16       : (2.4   x 4  x 16/8  = 19.2 GBps)  
+7)   LPDDR2_S4_1066_1x32  : (1.066 x 1  x 32/8  =  4.3 GBps)  
+8)   LPDDR3_1600_1x32     : (1.6   x 1  x 32/8  =  6.4 GBps)  
+9)   GDDR5_4000_2x32      : (4.0   x 2  x 32/8  = 32.0 GBps)  
+10)  HBM_1000_4H_1x128    : (1.0   x 1  x 128/8 = 16.0 GBps)  
+11)  HBM_1000_4H_1x64     : (1.0   x 1  x 64/8  =  8.0 GBps)
 
 Each of these memories are derived from class DRAMCtrl in DRAMCtrl.py which
 in turn is dervied from class AbstractMemory in AbstractMemory.py. DRAMCtrl is
@@ -200,3 +200,5 @@ bool reorderQueue(std::deque<DRAMPacket*>& queue, Tick extra_col_delay) {
   }
 }
 ```
+
+-> l1 cache [master]---->[slave] SystemXbar() [master] -----> mem_ctrls[i].port 

@@ -1,5 +1,6 @@
 +++
-authors = ["Yuan Zhou", " Udit Gupta", "Steve Dai", "Ritchie Zhao", "Nitish Srivastava", "Hanchen Jin", "Joseph Featherston", "Yi-Hsiang Lai", "Gai Liu", "Gustavo Angarita Velasquez", "Wenping Wang", "Zhiru Zhang"]
+#authors = ["Yuan Zhou", " Udit Gupta", "Steve Dai", "Ritchie Zhao", "Nitish Srivastava", "Hanchen Jin", "Joseph Featherston", "Yi-Hsiang Lai", "Gai Liu", "Gustavo Angarita Velasquez", "Wenping Wang", "Zhiru Zhang"]
+authors = ["Yuan Zhou", " Udit Gupta", "Steve Dai", "Ritchie Zhao", "Nitish Srivastava", "et al."]
 date = "2018-05-10"
 image_preview = ""
 math = true

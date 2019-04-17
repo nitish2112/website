@@ -251,3 +251,17 @@ It was a fast, simple, inexpensive[no , here] process.
 **5) Do not use a comma to separate a prepositional phrase from the rest of the sentence unnecessarily.**  
 
 We discussed the final report[no , here] on the new project.
+
+# Hyphen
+
+The hyphen (-) is used primarily for linking and separating words and parts of words. The hyphen often improves the clarity of writing. The
+hyphen is sometimes confused with the dash, which may be indicated with two consecutive hyphens.
+
+## Hyphens with Compound Words
+
+Some compound words are formed with hyphens (able-bodied, over-thecounter). Hyphens are also used with multiword numbers from twentyone
+through ninety-nine and fractions when they are written out (threequarters). Most current dictionaries indicate whether compound words
+are hyphenated, written as one word, or written as separate words.
+
+
+NOTE: These are the notes taken from Alred, Gerald J., Charles T. Brusaw, and Walter E. Oliu. Handbook of technical writing. Macmillan, 2009.
