@@ -33,5 +33,3 @@ weight = 1
 # Biography
 
 I am a 5th year PhD candidate in Computer System Laboratory ([CSL](http://www.csl.cornell.edu)) at Cornell University. My research interests are computer architecture, high level synthesis and very large scale integration. I am being advised by [Prof. David Albonesi](http://www.csl.cornell.edu/~albonesi/) and [Prof. Zhiru Zhang](http://www.csl.cornell.edu/~zhiruz/). You can find my [CV](home/CV.pdf).
-
-
