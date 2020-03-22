@@ -12,6 +12,7 @@ tags = ["gem5"]
 +++
 
 <!--more-->
+
 This is a tutorial on how to add an instruction to the RISCV ISA, how to write program with the special instruction. I will also talk about how to add the new instruction to RISCV assembler and how to execute it on gem5.
 
 First of all download and install the riscv-tools:
@@ -168,7 +169,7 @@ In the riscv-isa-sim/riscv/encoding.h add the following lines:
 #define MATCH_MOD 0x200006b                                                    
 #define MASK_MOD 0xfe00707f
 ...
-DECLARE_INSN(add, MATCH_MOD, MASK_MOD)
+DECLARE_INSN(mod, MATCH_MOD, MASK_MOD)
 ```
 Create a file riscv-isa-sim/riscv/insns/mod.h and add these lines:
 

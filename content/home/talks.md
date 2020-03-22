@@ -19,6 +19,17 @@ count = 10
 detailed_list = true
 +++
 
+## **Tensaurus: A Versatile Accelerator for Mixed Sparse-Dense Tensor Computations**
+
+Tensor factorizations are powerful tools in many machine learning and data analytics applications. Tensors are often
+sparse, which makes sparse tensor factorizations memory bound. In this talk, I present a hardware accelerator, Tensaurus,
+that can accelerate both dense and sparse tensor factorizations. We co-design the hardware and a sparse storage
+format, which allows accessing the sparse data in vectorized and streaming fashion and maximizes the utilization of
+the memory bandwidth. We also extract a common computation pattern that is found in numerous matrix and tensor
+operations and implement it in the hardware. 
+
+{{< youtube cb2vFGbE_7M >}}
+
 ## **T2S-Tensor: Productively Generating High-Performance Spatial Hardware for Dense Tensor Computations**
 
 We present a language and compilation framework for productively generating high-performance systolic arrays for 

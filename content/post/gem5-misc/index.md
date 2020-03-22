@@ -11,7 +11,6 @@ tags = ["gem5"]
 
 +++
 <!--more-->
-Here I will talk about miscellaneous things that you can use with gem5.
 
 # Adding an option to gem5
 
@@ -49,7 +48,7 @@ Say we want to add option "xyz" to our simulator
    if ( xyz ) {  .... } else { ... }
   
    
-Hurray! we added a new option to gem5.
+We have now added a new option to gem5.
 
 
 

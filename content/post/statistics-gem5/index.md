@@ -11,6 +11,7 @@ tags = ["gem5"]
 
 +++
 <!--more-->
+
 This is a tutorial on how to add statistics in gem5. 
 
 -- All the stats are defined in the namespace Stats. namespace Stats

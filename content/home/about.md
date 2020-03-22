@@ -32,4 +32,6 @@ weight = 1
 
 # Biography
 
-I am a 5th year PhD candidate in Computer System Laboratory ([CSL](http://www.csl.cornell.edu)) at Cornell University. My research interests are computer architecture, high level synthesis and very large scale integration. I am being advised by [Prof. David Albonesi](http://www.csl.cornell.edu/~albonesi/) and [Prof. Zhiru Zhang](http://www.csl.cornell.edu/~zhiruz/). You can find my [CV](home/CV.pdf).
+I am a software engineer in the edge TPU group at Google. I completed my Ph.D. at Cornell University where I developed domain-specific language, T2S-Tensor, to productively generate high-performance accelerators for dense tensor computations and a domain-specific hardware, Tensaurus, to accelerate mixed sparse-dense tensor computations. I was advised by [Prof. David Albonesi](http://www.csl.cornell.edu/~albonesi/) and [Prof. Zhiru Zhang](http://www.csl.cornell.edu/~zhiruz/). Before coming to Cornell, I obtained my Bachelor of Technology degree in Electrical Engineering from Indian Institute of Technology, Kanpur, where I was awarded with the President's Gold Medal. You can find my CV [here](home/CV.pdf). 
+
+I am interested in re-thinking algorithm, language and hardware design to accelerate sparse and dense tensor algebra. 
