@@ -9,7 +9,7 @@ publication_short = "*Ph.D. Dissertation*"
 selected = true
 title = "Design and Generation of Efficient Hardware Accelerators for Sparse and Dense Tensor Computations"
 url_pdf = "publication/nitish-dissertation.pdf"
-#url_slides = "publication/hpca-tensaurus.pdf"
+url_slides = "publication/nitish-srivastava-b-exam-split.pdf"
 #url_video = "https://www.youtube.com/watch?v=cb2vFGbE_7M"
 
 # Optional featured image (relative to `static/img/` folder).
