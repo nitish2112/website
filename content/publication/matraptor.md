@@ -9,8 +9,8 @@ publication_short = "*In Int'l Symp. on Microarchitecture (MICRO), 2020*"
 selected = true
 title = "MatRaptor: A Sparse-Sparse Matrix Multiplication Accelerator Based on Row-Wise Product"
 url_pdf = "publication/matraptor-micro2020.pdf"
-#url_slides = "publication/hpca-tensaurus.pdf"
-#url_video = "https://www.youtube.com/watch?v=cb2vFGbE_7M"
+url_slides = "publication/matraptor-presentation.pdf"
+url_video = "https://www.youtube.com/watch?v=B8G5ZUDu4Yw"
 
 # Optional featured image (relative to `static/img/` folder).
 [header]
