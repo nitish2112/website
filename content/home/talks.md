@@ -22,16 +22,14 @@ detailed_list = true
 ## **MatRaptor: A Sparse-Sparse Matrix Multiplication Accelerator Based on Row-Wise Product**
 
 Sparse-sparse matrix multiplication (SpGEMM) is a computation kernel widely used in numerous
-application domains such as data analytics, graph processing, and scientific computing. In
-this work we propose MatRaptor, a novel SpGEMM accelerator that is high performance and
+application domains. MatRaptor, a novel SpGEMM accelerator, is high performance and
 highly resource efficient. Unlike conventional methods using inner or outer product as the
 meta operation for matrix multiplication, our approach is based on row-wise product, which
 offers a better tradeoff in terms of data reuse and on-chip memory requirements, and
 achieves higher performance for large sparse matrices. We further propose a new
 hardware-friendly sparse storage format, which allows parallel compute engines to access
 the sparse data in a vectorized and streaming fashion, leading to high utilization of
-memory bandwidth. We prototype and simulate our accelerator architecture using gem5 on a
-diverse set of matrices
+memory bandwidth.
 
 {{< youtube B8G5ZUDu4Yw >}}
 
