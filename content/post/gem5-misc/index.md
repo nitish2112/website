@@ -50,4 +50,3 @@ Say we want to add option "xyz" to our simulator
    
 We have now added a new option to gem5.
 
-<iframe width="670" height="500" src="https://grid.is/embed/should-i-buy-a-house-RFDtqPz9TcOEXyg51a1ZGg?s=W1siU2hlZXQxIUIxMCIsMjVdLFsiU2hlZXQxIUIxMiIsMF0sWyJTaGVldDEhQjMiLDEwNTAwXV0=&showControls=1" frameborder="0"></iframe>
